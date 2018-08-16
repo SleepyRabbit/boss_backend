@@ -4,63 +4,72 @@ var router = express.Router();
 var mysql = require('mysql');
 var config = require("../../config");
 
+var connection = null;
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
-    // console.log(req.query);
+    console.log("Get!");
+});
 
-    let query = req.query;
+router.post('/', function(req, res, next) {
+    console.log("Post!");
+    let parma = req.body.parma;
 
-    // 判断url的query中是否有'par'
-    if('par' in query) {
-        let param = query.par;
-        console.log(param);
+    if('command' in req.body) {
+        let command = req.body.command;
+        // console.log(command);
 
-        // 登陆数据库
-        if(param === 'login') {
-
-            // 建立数据库连接
-            let connection = mysql.createConnection({
+        switch(command){
+            case 'login':
+                // 建立数据库连接
+                connection = mysql.createConnection({
                 host: config.mysql.host,
                 user: config.mysql.user,
                 password: config.mysql.password,
                 // database: config.mysql.database,
                 port: config.mysql.port,
-            });
+                });
 
-            // 连接数据库
-            connection.connect(err => {
-                if(err)
-                {
-                    console.log("mysql login failed!");
-                    res.send("failed!");
+                console.log(connection);
+
+                // 连接数据库
+                connection.connect(err => {
+                    if(err)
+                    {
+                        console.log("mysql login failed!");
+                        res.send("mysql login failed!");
+                    }
+                    else {
+                        console.log("mysql login succeed!");
+                        res.send("mysql login succeed!");
+                    }
+                });
+
+                console.log(connection);
+                break;
+            case 'query':
+                if('quote' in req.body) {
+                    sqlQueryQuote = req.body.quote;
+                    console.log(sqlQueryQuote);
+                    connection.query(sqlQueryQuote, (err, res) => {
+                        if(err) {
+                            console.log("err code: ", err.code);
+                            console.log("err sqlMessage: ", err.sqlMessage);
+                        }
+                        else {
+                            console.log("Connect to database succeed!");
+                        }
+                    });
                 }
                 else {
-                    console.log("mysql login succeed!");
-                    res.send("succeed!");
+                    console.log("Query with no parmater");
                 }
-            });
-
-            // connection.on('error', err => {
-            //     console.log("err code: ", err.code);
-            //     console.log("err sqlMessage: ", err.sqlMessage);
-            // })
-
-            // 连接数据库
-            // connection.connect( (err, res) => {
-            //     if(err)
-            //     {
-            //         throw err;
-            //         console.log("Error when connecting to db");
-            //         console.log("err code: ", err.code);
-            //         console.log("err sqlMessage: ", err.sqlMessage);
-            //         res.send('database login failed!');
-            //         return;
-            //     }
-            //     else {
-            //         console.log("Mysql login succeed!");
-            //     }
-            // });
-
+                break;
+            default:
+                break;
+        }
+        // 登陆数据库
+        if(command === 'login') {
             // let sqlQuery = 'use test';
             // connection.query(sqlQuery, (err, result) => {
             //     if(err) {
@@ -72,7 +81,11 @@ router.get('/', function(req, res, next) {
             //     }
             // });
         }
+
     }
-});
+    else {
+        console.log("Post with no command!");
+    }
+})
 
 module.exports = router;
